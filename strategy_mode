@@ -1,7 +1,76 @@
 1.策略模式
   定义：策略模式(Strategy Pattern)是一种行为设计模式， 它能让你定义一系列算法， 并将每种算法分别放入独立的类中， 以使算法的对象能够相互替换。
        策略模式定义一系列算法，将每一个算法封装起来，并让它们可以相互替换。策略模式让算法独立于使用它的客户而变化，也称为策略模式(Policy)。
-  优点:
   原则：封装变化
-       多
+       多用组合，少用继承
+       针对接口编程，不针对实现编程
+  优点：
+       .你可以在运行时切换对象内的算法。
+       .你可以将算法的实现和使用算法的代码隔离开来。
+       .你可以使用组合来代替继承。
+       .开闭原则,你无需对上下文进行修改就能够引入新的策略。
   
+  缺点：
+       .如果你的算法极少发生改变， 那么没有任何理由引入新的类和接口。 使用该模式只会让程序过于复杂。
+       .客户端必须知晓策略间的不同——它需要选择合适的策略。
+       
+       
+ 实现：
+ 上下文 （Context） 维护指向具体策略的引用， 且仅通过策略接口与该对象进行交流。
+ 策略 （Strategy） 接口是所有具体策略的通用接口， 它声明了一个上下文用于执行策略的方法。
+ 具体策略 （Concrete Strategies） 实现了上下文所用算法的各种不同变体。
+ 当上下文需要运行算法时， 它会在其已连接的策略对象上调用执行方法。 上下文不清楚其所涉及的策略类型与算法的执行方式。
+ 客户端 （Client） 会创建一个特定策略对象并将其传递给上下文。 上下文则会提供一个设置器以便客户端在运行时替换相关联的策略。
+ class Strategy
+ {
+  public:
+    virtual ~Strategy(){}
+    virtual void exec() = 0;
+ };
+
+class StrategyA :public Strategy
+{
+public:
+    void exec()
+    {
+        cout << "StrategyA::exec()" << endl;
+    }
+};
+
+class StrategyB :public Strategy
+{
+public:
+    void exec()
+    {
+        cout << "StrategyB::exec()" << endl;
+    }
+};
+
+class Context
+{
+public:
+    explicit Context(Strategy* strategy):_strategy(strategy)
+    {}
+    void set_strategy(Strategy* strategy)
+    { _strategy = strategy; }
+    void exec()
+    { _strategy->exec();}
+private:
+    Strategy* _strategy;    
+};
+
+int main(int, char**)
+{
+    Strategy * strategyA = new StrategyA();
+    Strategy * strategyB = StrategyB();
+
+    Context context;
+    context.set_strategy(strategyA);
+    context.exec();
+    
+    context.set_strategy(strategyB);
+    context.exec();
+    
+    return 0;
+}
+
