@@ -1,0 +1,156 @@
+2.观察者模式
+  定义：观察者是一种行为设计模式，在对象之间定义一对多的依赖，这样一来，当一个对象改变状态，依赖它的对象都会收到通知，并自动更新
+  原则：为交互对象之间的松耦合设计而努力。（主题只知道观察者实现了某个接口，不需要知道观察者的具体的类，做了些什么或其它细节）
+       针对接口编程，不针对实现编程
+  优点：
+       .你可以在运行时切换对象内的算法。
+       .你可以将算法的实现和使用算法的代码隔离开来。
+       .你可以使用组合来代替继承。
+       .开闭原则,你无需对上下文进行修改就能够引入新的策略。
+  
+  缺点：
+       .如果你的算法极少发生改变， 那么没有任何理由引入新的类和接口。 使用该模式只会让程序过于复杂。
+       .客户端必须知晓策略间的不同——它需要选择合适的策略。
+       
+       
+#include <iostream>
+#include <list>
+#include <string>
+
+class IObserver {
+ public:
+  virtual ~IObserver(){};
+  virtual void Update(const std::string &message_from_subject) = 0;
+};
+
+class ISubject {
+ public:
+  virtual ~ISubject(){};
+  virtual void Attach(IObserver *observer) = 0;
+  virtual void Detach(IObserver *observer) = 0;
+  virtual void Notify() = 0;
+};
+
+/**
+ * The Subject owns some important state and notifies observers when the state
+ * changes.
+ */
+
+class Subject : public ISubject {
+ public:
+  virtual ~Subject() {
+    std::cout << "Goodbye, I was the Subject.\n";
+  }
+
+  /**
+   * The subscription management methods.
+   */
+  void Attach(IObserver *observer) override {
+    list_observer_.push_back(observer);
+  }
+  void Detach(IObserver *observer) override {
+    list_observer_.remove(observer);
+  }
+  void Notify() override {
+    std::list<IObserver *>::iterator iterator = list_observer_.begin();
+    HowManyObserver();
+    while (iterator != list_observer_.end()) {
+      (*iterator)->Update();
+      ++iterator;
+    }
+  }
+
+  void CreateMessage(std::string message = "Empty") {
+    this->message_ = message;
+    Notify();
+  }
+  void HowManyObserver() {
+    std::cout << "There are " << list_observer_.size() << " observers in the list.\n";
+  }
+
+  
+  string GetState() 
+  { 
+     return message_; 
+  }
+  
+  void SetState(string state) 
+  { 
+      message_ = state; 
+      Notify();
+  }
+  
+ private:
+  std::list<IObserver *> list_observer_;
+  std::string message_;
+};
+
+class Observer : public IObserver 
+{
+public:
+
+  Observer(Subject &subject) : subject_(subject) {
+    this->subject_.Attach(this);
+    std::cout << "Hi, I'm the Observer \"" << ++Observer::static_number_ << "\".\n";
+    this->number_ = Observer::static_number_;
+  }
+  virtual ~Observer() {
+    std::cout << "Goodbye, I was the Observer \"" << this->number_ << "\".\n";
+  }
+
+  void Update() override {
+    message_from_subject_ = this->subject_.GetState();
+    PrintInfo();
+  }
+  void RemoveMeFromTheList() {
+    subject_.Detach(this);
+    std::cout << "Observer \"" << number_ << "\" removed from the list.\n";
+  }
+  void PrintInfo() {
+    std::cout << "Observer \"" << this->number_ << "\": a new message is available --> " << this->message_from_subject_ << "\n";
+  }
+ 
+ private:
+  std::string message_from_subject_;
+  Subject &subject_;
+  static int static_number_;
+  int number_;
+};
+
+int Observer::static_number_ = 0;
+
+void ClientCode() {
+  Subject *subject = new Subject;
+  Observer *observer1 = new Observer(*subject);
+  Observer *observer2 = new Observer(*subject);
+  Observer *observer3 = new Observer(*subject);
+  Observer *observer4;
+  Observer *observer5;
+
+  subject->CreateMessage("Hello World! :D");
+  observer3->RemoveMeFromTheList();
+
+  subject->CreateMessage("The weather is hot today! :p");
+  observer4 = new Observer(*subject);
+
+  observer2->RemoveMeFromTheList();
+  observer5 = new Observer(*subject);
+
+  subject->CreateMessage("My new car is great! ;)");
+  observer5->RemoveMeFromTheList();
+
+  observer4->RemoveMeFromTheList();
+  observer1->RemoveMeFromTheList();
+
+  delete observer5;
+  delete observer4;
+  delete observer3;
+  delete observer2;
+  delete observer1;
+  delete subject;
+}
+
+int main() {
+  ClientCode();
+  return 0;
+}
