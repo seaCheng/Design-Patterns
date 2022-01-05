@@ -2,33 +2,34 @@
   定义：观察者是一种行为设计模式，在对象之间定义一对多的依赖，这样一来，当一个对象改变状态，依赖它的对象都会收到通知，并自动更新
   原则：为交互对象之间的松耦合设计而努力。（主题只知道观察者实现了某个接口，不需要知道观察者的具体的类，做了些什么或其它细节）
        针对接口编程，不针对实现编程
+  
   优点：
-       .你可以在运行时切换对象内的算法。
-       .你可以将算法的实现和使用算法的代码隔离开来。
-       .你可以使用组合来代替继承。
-       .开闭原则,你无需对上下文进行修改就能够引入新的策略。
+  观察者和被观察者是抽象耦合的
   
   缺点：
-       .如果你的算法极少发生改变， 那么没有任何理由引入新的类和接口。 使用该模式只会让程序过于复杂。
-       .客户端必须知晓策略间的不同——它需要选择合适的策略。
+  如果一个被观察者对象有很多的直接和间接的观察者，将所有的观察者都通知到会花费很多时间
        
-       
-#include <iostream>
+  抽象主题（Subject）：跟踪所有观察者，并提供添加和删除观察者的接口。
+  抽象观察者（Observer）：为所有的具体观察者定义一个接口，在得到主题的通知时进行自我更新。
+  具体主题（ConcreteSubject）：将有关状态存入各 ConcreteObserver 对象。当具体主题的状态发生任何更改时，通知所有观察者。
+  具体观察者（ConcreteObserver）：实现 Observer 所要求的更新接口，以便使本身的状态与主题的状态相协调。
+
+  #include <iostream>
 #include <list>
 #include <string>
 
 class IObserver {
- public:
-  virtual ~IObserver(){};
-  virtual void Update(const std::string &message_from_subject) = 0;
+public:
+    virtual ~IObserver(){};
+    virtual void Update() = 0;
 };
 
 class ISubject {
- public:
-  virtual ~ISubject(){};
-  virtual void Attach(IObserver *observer) = 0;
-  virtual void Detach(IObserver *observer) = 0;
-  virtual void Notify() = 0;
+public:
+    virtual ~ISubject(){};
+    virtual void Attach(IObserver *observer) = 0;
+    virtual void Detach(IObserver *observer) = 0;
+    virtual void Notify() = 0;
 };
 
 /**
@@ -37,120 +38,106 @@ class ISubject {
  */
 
 class Subject : public ISubject {
- public:
-  virtual ~Subject() {
-    std::cout << "Goodbye, I was the Subject.\n";
-  }
-
-  /**
+public:
+    virtual ~Subject() {
+        std::cout << "Goodbye, I was the Subject.\n";
+    }
+    
+    /**
    * The subscription management methods.
    */
-  void Attach(IObserver *observer) override {
-    list_observer_.push_back(observer);
-  }
-  void Detach(IObserver *observer) override {
-    list_observer_.remove(observer);
-  }
-  void Notify() override {
-    std::list<IObserver *>::iterator iterator = list_observer_.begin();
-    HowManyObserver();
-    while (iterator != list_observer_.end()) {
-      (*iterator)->Update();
-      ++iterator;
+    void Attach(IObserver *observer) override {
+        list_observer_.push_back(observer);
     }
-  }
-
-  void CreateMessage(std::string message = "Empty") {
-    this->message_ = message;
-    Notify();
-  }
-  void HowManyObserver() {
-    std::cout << "There are " << list_observer_.size() << " observers in the list.\n";
-  }
-
-  
-  string GetState() 
-  { 
-     return message_; 
-  }
-  
-  void SetState(string state) 
-  { 
-      message_ = state; 
-      Notify();
-  }
-  
- private:
-  std::list<IObserver *> list_observer_;
-  std::string message_;
+    void Detach(IObserver *observer) override {
+        list_observer_.remove(observer);
+    }
+    void Notify() override {
+        std::list<IObserver *>::iterator iterator = list_observer_.begin();
+        HowManyObserver();
+        while (iterator != list_observer_.end()) {
+            (*iterator)->Update();
+            ++iterator;
+        }
+    }
+    
+    void HowManyObserver() {
+        std::cout << "There are " << list_observer_.size() << " observers in the list.\n";
+    }
+    
+    
+    std::string GetState()
+    {
+        return message_;
+    }
+    
+    void SetState(std::string message)
+    {
+        message_ = message;
+        Notify();
+    }
+    
+private:
+    std::list<IObserver *> list_observer_;
+    std::string message_;
 };
 
 class Observer : public IObserver 
 {
 public:
-
-  Observer(Subject &subject) : subject_(subject) {
-    this->subject_.Attach(this);
-    std::cout << "Hi, I'm the Observer \"" << ++Observer::static_number_ << "\".\n";
-    this->number_ = Observer::static_number_;
-  }
-  virtual ~Observer() {
-    std::cout << "Goodbye, I was the Observer \"" << this->number_ << "\".\n";
-  }
-
-  void Update() override {
-    message_from_subject_ = this->subject_.GetState();
-    PrintInfo();
-  }
-  void RemoveMeFromTheList() {
-    subject_.Detach(this);
-    std::cout << "Observer \"" << number_ << "\" removed from the list.\n";
-  }
-  void PrintInfo() {
-    std::cout << "Observer \"" << this->number_ << "\": a new message is available --> " << this->message_from_subject_ << "\n";
-  }
- 
- private:
-  std::string message_from_subject_;
-  Subject &subject_;
-  static int static_number_;
-  int number_;
+    
+    Observer(Subject &subject) : subject_(subject) {
+        this->subject_.Attach(this);
+        std::cout << "Hi, I'm the Observer \"" << ++Observer::static_number_ << "\".\n";
+        this->number_ = Observer::static_number_;
+    }
+    virtual ~Observer() {
+        std::cout << "Goodbye, I was the Observer \"" << this->number_ << "\".\n";
+        RemoveMeFromTheList();
+    }
+    
+    void Update() override {
+        message_from_subject_ = this->subject_.GetState();
+        PrintInfo();
+    }
+    void RemoveMeFromTheList() {
+        subject_.Detach(this);
+        std::cout << "Observer \"" << number_ << "\" removed from the list.\n";
+    }
+    void PrintInfo() {
+        std::cout << "Observer \"" << this->number_ << "\": a new message is available --> " << this->message_from_subject_ << "\n";
+    }
+    
+private:
+    std::string message_from_subject_;
+    Subject &subject_;
+    static int static_number_;
+    int number_;
 };
 
 int Observer::static_number_ = 0;
 
-void ClientCode() {
-  Subject *subject = new Subject;
-  Observer *observer1 = new Observer(*subject);
-  Observer *observer2 = new Observer(*subject);
-  Observer *observer3 = new Observer(*subject);
-  Observer *observer4;
-  Observer *observer5;
-
-  subject->CreateMessage("Hello World! :D");
-  observer3->RemoveMeFromTheList();
-
-  subject->CreateMessage("The weather is hot today! :p");
-  observer4 = new Observer(*subject);
-
-  observer2->RemoveMeFromTheList();
-  observer5 = new Observer(*subject);
-
-  subject->CreateMessage("My new car is great! ;)");
-  observer5->RemoveMeFromTheList();
-
-  observer4->RemoveMeFromTheList();
-  observer1->RemoveMeFromTheList();
-
-  delete observer5;
-  delete observer4;
-  delete observer3;
-  delete observer2;
-  delete observer1;
-  delete subject;
+void ClientCode()
+{
+    Subject *subject = new Subject;
+    Observer *observer1 = new Observer(*subject);
+    Observer *observer2 = new Observer(*subject);
+    Observer *observer3 = new Observer(*subject);
+    
+    subject->SetState("Hello World! :D");
+    
+    subject->SetState("The weather is hot today! :p");
+    
+    subject->SetState("My new car is great! ;)");
+    
+    delete observer3;
+    delete observer2;
+    delete observer1;
+    delete subject;
 }
 
 int main() {
-  ClientCode();
-  return 0;
+    ClientCode();
+    return 0;
 }
+
