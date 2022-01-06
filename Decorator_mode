@@ -1,0 +1,94 @@
+1.装饰者模式
+  定义：动态的将责任附加到对象上。想要扩展功能，装饰者提供有别于继承的另一种选择，封装器（别名）
+  原则：多用组合，少用继承
+       对扩展开放，对修改关闭
+  优点：
+     .Decorator 模式与继承关系的目的都是要扩展对象的功能，可是 Decorator 能够提供比继承更多的灵活性。
+      经过使用不一样的具体装饰类以及这些装饰类的排列组合，能够创造出不少不一样行为的组合
+     .有效地把类的核心职责和装饰功能区分开了，而且可以去除相关类中重复的装饰逻辑
+  
+  缺点：
+     .装饰模式会致使设计中出现许多小类，若是过分使用，会使程序变得很复杂。
+     .在封装器栈中删除特定封装器比较困难
+       
+     
+ 实现：
+ Component（抽象构件）：给出一个抽象接口，以规范准备接收附加责任的对象。
+ ConcreteComponent（具体构件）：定义一个将要接收附加责任的类。
+ Decorator（抽象装饰类）：持有一个构件（Component）对象的实例，并实现一个与抽象构件接口一致的接口。
+ ConcreteDecorator（具体装饰类）：负责给构件对象添加上附加的责任。
+ 
+ #include <iostream>
+#include <string>
+using namespace std;
+
+class Component
+{
+    // 接口
+public:
+    virtual void Operation() = 0;
+    virtual ~Component() {}
+};
+
+class ConcreteComponent : public Component
+{
+    // 具体实现对象，需要被装饰的类
+public:
+    void Operation() { cout << "ConcreteComponent" << endl; }
+};
+
+class Decorator : public Component
+{
+private:
+    Component* component;
+public:
+    void SetComponent(Component* c)
+    {
+        component = c;
+    }  // 设置Component
+    virtual void Operation()
+    {
+        if (component) component->Operation();
+    }
+};
+
+class ConcreteDecoratorA : public Decorator
+{
+private:
+    string addedState;   // 本类独有功能
+public:
+    void Operation() {
+        Decorator::Operation();
+        addedState = "New state";
+        cout << "ConcreteDecoratorA: " << addedState << endl;
+    }
+};
+
+class ConcreteDecoratorB : public Decorator
+{
+private:
+    void AddedBehavior() { cout << "ConcreteDecoratorB: AddedBehavior" << endl; }   // 本类特有方法
+public:
+    void Operation() {
+        Decorator::Operation();
+        AddedBehavior();
+    }
+};
+
+int main()
+{
+    Component* c = new ConcreteComponent();
+    
+    Decorator* d1 = new ConcreteDecoratorA();
+    d1->SetComponent(c);
+    d1->Operation();
+
+    Decorator* d2 = new ConcreteDecoratorB();
+    d2->SetComponent(d1);
+    d2->Operation();
+
+    delete d1;
+    delete d2;
+    delete c;
+    return 0;
+}
