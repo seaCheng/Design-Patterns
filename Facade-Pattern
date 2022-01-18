@@ -1,0 +1,71 @@
+1.外观模式
+  定义：提供一个统一的接口，用来访问子系统的一群接口，外观定义了一个高层接口，让子系统更容易使用，外观模式又称为门面模式，它是一种对象结构型模式
+  原则：依赖抽象，不依赖具体类
+       最小知识原则
+       
+  优点：
+     .对客户屏蔽子系统组件，减少了客户处理的对象数目并使得子系统使用起来更加容易
+     .实现了子系统与客户之间的松耦合关系
+  
+  缺点：
+     .在不引入抽象外观类的情况下，增加新的子系统可能需要修改外观类或客户端的源代码，违背了“开闭原则”。
+       
+     
+ 实现：
+ 外观（Facade）角色：为多个子系统对外提供一个共同的接口。
+ 子系统（Sub System）角色：实现系统的部分功能，客户可以通过外观角色访问它。
+ 客户（Client）角色：通过一个外观角色访问各个子系统的功能。
+
+
+ #include <iostream>
+using namespace std;
+
+class SubSystemOne {
+public:
+    void MethodOne() { cout << "SubSystemOne" << endl; }
+};
+
+class SubSystemTwo {
+public:
+    void MethodTwo() { cout << "SubSystemTwo" << endl; }
+};
+
+class SubSystemThree {
+public:
+    void MethodThree() { cout << "SubSystemThree" << endl; }
+};
+
+class SubSystemFour {
+public:
+    void MethodFour() { cout << "SubSystemFour" << endl; }
+};
+
+class Facade {
+private:
+    SubSystemOne s1;
+    SubSystemTwo s2;
+    SubSystemThree s3;
+    SubSystemFour s4;
+public:
+    void MethodA() { // 方法组合
+        s1.MethodOne();
+        s3.MethodThree();
+    }
+    void MethodB() { // 方法组合
+        s2.MethodTwo();
+        s3.MethodThree();
+        s4.MethodFour();
+    }
+};
+
+int main() {
+    Facade f;
+    f.MethodA(); // SubSystemOne
+                 // SubSystemThree
+    cout << endl;
+    f.MethodB(); // SubSystemTwo
+                 // SubSystemThree
+                 // SubSystemFour
+    return 0;
+}
+ 
