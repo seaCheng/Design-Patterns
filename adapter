@@ -1,0 +1,53 @@
+1.适配器模式
+  定义：设计模式属于结构型模式，它结合了两个独立接口的功能，将一个类的接口，转变为客户期待的另一个接口，适配器让原本接口不兼容的的类可以合作无间。
+  原则：依赖抽象，不依赖具体类
+       对修改关闭，对拓展开放
+       
+  优点：
+     .可以让任何两个没有关联的类一起运行。
+     .提高了类的复用
+  
+  缺点：
+     .代码整体复杂度增加， 因为你需要新增一系列接口和类。 有时直接更改服务类使其与其他代码兼容会更简单
+       
+     
+ 实现：
+ Target：客户期望获得的功能接口。
+ Cilent：客户，期望访问Target接口。
+ Adaptee：现有接口，这个接口需要被适配。
+ Adapter：适配器类，适配现有接口使其符合客户需求接口。
+ 
+ #include <iostream>
+using namespace std;
+
+class Target {  // Target，客户期望的接口，可以使具体或抽象的类，也可以是接口
+public:
+    virtual void Request() = 0;
+    virtual ~Target(){};
+};
+
+class Adaptee { // 需适配的类
+public:
+    void SpecificRequest() { cout << "Adaptee" << endl; }
+};
+
+class Adapter : public Target { // 通过内部包装一个Adaptee对象，把源接口转换为目标接口：
+private:
+    Adaptee* adaptee;
+public:
+    Adapter() { adaptee = new Adaptee(); }
+    void Request() 
+    { 
+      cout<<"开始适配"<<endl;
+      adaptee->SpecificRequest(); 
+    }  // 调用Request()方法会转换成调用adaptee.SpecificRequest()
+    ~Adapter() { delete adaptee; }
+};
+
+int main() {
+    Target* target = new Adapter();
+    target->Request();
+
+    delete target;
+    return 0;
+}
