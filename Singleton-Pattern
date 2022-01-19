@@ -1,0 +1,111 @@
+1.单例模式
+  定义：确保一个类只有一个实例，并提供一个全局访问点。
+  原则：依赖抽象，不依赖具体类
+       
+  优点：
+     .命令模式使新的命令很容易被加入到系统里。
+     .能较容易的设计一个命令队列。
+     .可以容易的实现对请求的撤销和恢复。
+     .在需要的情况下，可以较容易的将命令记入日志
+  
+  缺点：
+     .使用命令模式可能会导致某些系统有过多的具体命令类
+       
+     
+  饿汉版（Eager Singleton）
+  class singleton {
+private:
+    singleton() {}
+    static singleton *p;
+public:
+    static singleton *instance();
+};
+
+singleton *singleton::p = new singleton();
+singleton* singleton::instance() {
+    return p;
+}
+
+懒汉模式
+#include <iostream>
+#include <atomic> 
+#include <thread>         // std::thread
+#include <mutex>
+using namespace std;
+
+class singleton {
+private:
+    singleton()
+    {
+        cout<<"construct ..."<<endl;
+    }
+    ~singleton()
+    {
+        cout<<"destroy .... ";
+    }
+
+    static atomic<singleton *> p;
+    static mutex lock_;
+public:
+    static singleton *instance();
+
+    // 实现一个内嵌垃圾回收类
+    class CGarbo
+    {
+    public:
+        ~CGarbo()
+        {
+            singleton *tmp = singleton::p.load(memory_order_relaxed);
+            if(tmp)
+                delete tmp;
+        }
+    };
+    static CGarbo Garbo; // 定义一个静态成员变量，程序结束时，系统会自动调用它的析构函数从而释放单例对象
+};
+
+singleton::CGarbo singleton::Garbo;
+mutex singleton::lock_;
+atomic<singleton *> singleton::p;
+
+/*
+* std::atomic_thread_fence(std::memory_order_acquire); 
+* std::atomic_thread_fence(std::memory_order_release);
+* 这两句话可以保证他们之间的语句不会发生乱序执行。
+*/
+singleton *singleton::instance() {
+    singleton *tmp = p.load(memory_order_relaxed);
+    atomic_thread_fence(memory_order_acquire);
+    if (tmp == nullptr) {
+        lock_guard<mutex> guard(lock_);
+        tmp = p.load(memory_order_relaxed);
+        if (tmp == nullptr) {
+            tmp = new singleton();
+            atomic_thread_fence(memory_order_release);
+            p.store(tmp, memory_order_relaxed);
+        }
+    }
+    return p;
+}
+
+int main()
+{
+   singleton::instance();
+   return 0;
+}
+
+c++11 实现
+class CSingleton
+{
+private:
+    CSingleton(void)
+    
+public:
+    static CSingleton & getInstance()
+    {
+        static CSingleton m_pInstance;  //局部静态变量
+        return m_pInstance;
+    }
+};
+
+
+  
