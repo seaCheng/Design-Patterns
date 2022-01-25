@@ -1,0 +1,156 @@
+1.mvc 复合模式
+  定义：MVC模式是由策略模式 + 观察者模式组合而成
+  原则：依赖抽象，不依赖具体类
+       
+  优点：
+     .可以为一个模型在运行时同时建立和使用多个视图。变化-传播机制可以确保所有相关的视图及时得到模型数据变化，从而使所有关联的视图和控制器做到行为同步。
+     .模型的可移植性。因为模型是独立于视图的，所以可以把一个模型独立地移植到新的平台工作。需要做的只是在新平台上对视图和控制器进行新的修改。
+  
+  缺点：
+     .增加了系统结构和实现的复杂性：增加了系统结构和实现的复杂性。对于简单的界面，严格遵循MVC，使模型、视图与控制器分离，
+       会增加结构的复杂性，并可能产生过多的更新操作，降低运行效率。
+     .视图跟控制器过于紧密的连接：视图与控制器间的过于紧密的连接。视图与控制器是相互分离，但确实联系紧密的部件，
+       视图没有控制器的存在，其应用是很有限的，反之亦然，这样就妨碍了他们的独立重用
+       
+     
+ 实现：
+ Model（模型）：
+ 模型用于获取数据，保存页面的状态；
+ View（视图）：
+ 不同状态下的应用，呈现的视图是不一样的，比如登录页面、个人页面、列表页面；
+ 接收用户的行为事件，比如点击登录、点击退出、删除等等；
+ Controller（控制器）：
+ 控制器主要是根据应用状态（策略）来切换页面显示；
+ M、V、C的依赖场景：
+ C根据应用状态，返回不同的V；
+ V根据用户的操作产生事件，传递给C；
+ C接收事件，做出反应，更新M，返回不同的V给前端；
+ 
+ 
+ #include <iostream>
+ #include <string>
+
+class Callable
+{
+
+public:
+
+    virtual ~ Callable(){}
+
+    virtual void notify()=0;
+
+};
+
+class Model       
+{
+
+public:
+
+    std::string data() const
+    {
+
+        return this->m_data;
+
+    }
+
+    void set_data(const std::string& data)
+    {
+
+        this->m_data = data;
+        if(this->event != nullptr)
+
+        {
+
+            this->event->notify();
+
+        }
+
+    }
+
+    void register_data_changed_handler(Callable* controller)
+
+    {
+
+        this->event = controller;
+
+    }
+
+private:
+
+    std::string m_data;
+
+    Callable* event{nullptr};
+
+};
+
+class View
+
+{
+
+public:
+
+    void set_data(const std::string & value) const
+
+    {
+
+        std::cout << "display string:  " << value <<std::endl;
+
+    }
+
+};
+
+
+class Controller:public Callable
+{
+
+public:
+
+    Controller(Model& model, View& view)
+    {
+
+        this->set_model(model);
+
+        this->set_view(view);
+
+    }
+
+    void set_model(Model &model)
+    {
+
+        this->model = &model;
+
+        this->model->register_data_changed_handler(this);
+
+    }
+
+    void set_view(View &view)
+    {
+
+        this->view = &view;
+
+    }
+
+    void notify() override
+    {
+
+        auto str = this->model->data();
+        if(this->view != nullptr)
+          this->view->set_data(str);
+
+    }
+
+private:
+
+    Model* model = nullptr;
+    View* view = nullptr;
+
+};
+
+int main(int argc, char *argv[])
+{
+    Model m;
+    View v;
+    Controller c(m,v);
+    m.set_data("Hello world");
+    return 0;
+}
